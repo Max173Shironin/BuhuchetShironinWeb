@@ -1,0 +1,535 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бухгалтерский учёт номенклатуры</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+
+            .sidebar.collapsed {
+                width: 70px;
+            }
+
+                .sidebar.collapsed .sidebar-text {
+                    display: none;
+                }
+
+                .sidebar.collapsed .logo-text {
+                    display: none;
+                }
+
+                .sidebar.collapsed .nav-item {
+                    justify-content: center;
+                }
+
+        .content {
+            transition: all 0.3s ease;
+        }
+
+            .content.expanded {
+                margin-left: 70px;
+            }
+
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            transition: background-color 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Сайдбар -->
+        <div id="sidebar" class="sidebar bg-blue-800 text-white h-full fixed flex flex-col w-64">
+            <!-- Логотип -->
+            <div class="flex items-center justify-between p-4 border-b border-blue-700">
+                <div class="flex items-center">
+                    <i class="fas fa-calculator text-2xl mr-3"></i>
+                    <span class="logo-text text-xl font-bold">Широнин БухУчет</span>
+                </div>
+                <button id="toggleSidebar" class="text-white focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <!-- Навигация -->
+            <nav class="flex-1 overflow-y-auto py-4">
+                <div class="space-y-2 px-4">
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg bg-blue-700">
+                        <i class="fas fa-boxes mr-3"></i>
+                        <span class="sidebar-text">Номенклатура</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-file-invoice-dollar mr-3"></i>
+                        <span class="sidebar-text">Документы</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span class="sidebar-text">Отчёты</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-users mr-3"></i>
+                        <span class="sidebar-text">Контрагенты</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span class="sidebar-text">Настройки</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Профиль пользователя -->
+            <div class="p-4 border-t border-blue-700">
+                <div class="flex items-center">
+                    <img src="https://ui-avatars.com/api/?name=Максим+Широнин&background=random"
+                         class="w-10 h-10 rounded-full mr-3" alt="User">
+                    <div class="sidebar-text">
+                        <div class="font-medium">Максим Широнин</div>
+                        <div class="text-sm text-blue-200">Бухгалтер</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контент -->
+        <div id="content" class="content flex-1 flex flex-col ml-64">
+            <!-- Середина -->
+            <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-800">Учёт номенклатуры</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Поиск..."
+                               class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button class="p-2 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-bell text-gray-600"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Главная зона контента -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Панель действий -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
+                    <div class="flex space-x-3">
+                        <button id="addProductBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Добавить товар
+                        </button>
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Экспорт
+                        </button>
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-filter mr-2"></i> Фильтры
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Всего товаров: <span id="totalItems" class="font-bold">25</span>
+                    </div>
+                </div>
+
+                <!-- Таблица результатов -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Код
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Наименование
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Категория
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Ед. измерения
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Цена
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Остаток
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Действия
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- Товары будут добавляться сюда динамически -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Нумерация страниц -->
+                    <div class="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Назад
+                            </a>
+                            <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Вперёд
+                            </a>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Показано
+                                    <span class="font-medium">1</span>
+                                    из
+                                    <span class="font-medium">3</span>
+                                    страниц
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Previous</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                        1
+                                    </a>
+                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                        2
+                                    </a>
+                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                        3
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Next</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Добавить номенклатуру -->
+    <div id="addProductModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-box text-blue-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">
+                                Добавить новый товар
+                            </h3>
+                            <div class="mt-4">
+                                <form id="productForm">
+                                    <div class="grid grid-cols-1 gap-y-4">
+                                        <div>
+                                            <label for="productCode" class="block text-sm font-medium text-gray-700">Код товара</label>
+                                            <input type="text" id="productCode" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label for="productName" class="block text-sm font-medium text-gray-700">Наименование</label>
+                                            <input type="text" id="productName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label for="productCategory" class="block text-sm font-medium text-gray-700">Категория</label>
+                                            <select id="productCategory" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                                <option value="">Выберите категорию</option>
+                                                <option value="electronics">Электроника</option>
+                                                <option value="office">Офисные принадлежности</option>
+                                                <option value="furniture">Мебель</option>
+                                                <option value="materials">Строительные материалы</option>
+                                                <option value="vazhnoe">Жизненно необходимое</option>
+                                            </select>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="productUnit" class="block text-sm font-medium text-gray-700">Ед. измерения</label>
+                                                <select id="productUnit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                                    <option value="шт">шт</option>
+                                                    <option value="кг">кг</option>
+                                                    <option value="л">л</option>
+                                                    <option value="м">м</option>
+                                                    <option value="м²">м²</option>
+                                                    <option value="м³">м³</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="productPrice" class="block text-sm font-medium text-gray-700">Цена, руб.</label>
+                                                <input type="number" step="0.01" id="productPrice" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="productDescription" class="block text-sm font-medium text-gray-700">Описание</label>
+                                            <textarea id="productDescription" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="saveProductBtn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Сохранить
+                    </button>
+                    <button type="button" id="cancelProductBtn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Отмена
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление об успешном завершении -->
+    <div id="successNotification" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Успешно!</strong>
+            <span class="block sm:inline" id="successMessage">Товар успешно добавлен.</span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <button id="closeSuccessBtn" class="text-green-700 hover:text-green-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // Примеры номенклатур
+        const products = [
+            { id: 1, code: 'PRD-001', name: 'Ноутбук Lenovo IdeaPad', category: 'electronics', unit: 'шт', price: 54990.00, stock: 12 },
+            { id: 2, code: 'PRD-002', name: 'Офисный стол', category: 'furniture', unit: 'шт', price: 8990.00, stock: 5 },
+            { id: 3, code: 'PRD-003', name: 'Бумага А4', category: 'office', unit: 'пачка', price: 299.00, stock: 24 },
+            { id: 4, code: 'PRD-004', name: 'Принтер HP LaserJet', category: 'electronics', unit: 'шт', price: 24990.00, stock: 7 },
+            { id: 5, code: 'PRD-005', name: 'Кресло офисное', category: 'furniture', unit: 'шт', price: 5990.00, stock: 8 },
+            { id: 6, code: 'PRD-006', name: 'Ручка шариковая', category: 'office', unit: 'шт', price: 25.00, stock: 150 },
+            { id: 7, code: 'PRD-007', name: 'Монитор Dell 24"', category: 'electronics', unit: 'шт', price: 18990.00, stock: 9 },
+            { id: 8, code: 'PRD-008', name: 'Шкаф для документов', category: 'furniture', unit: 'шт', price: 12990.00, stock: 3 },
+            { id: 9, code: 'PRD-009', name: 'Скотч прозрачный', category: 'office', unit: 'шт', price: 89.00, stock: 42 },
+            { id: 10, code: 'PRD-010', name: 'Мышь беспроводная', category: 'electronics', unit: 'шт', price: 990.00, stock: 18 }
+        ];
+
+        const toggleSidebarBtn = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const productsTable = document.getElementById('productsTable');
+        const totalItems = document.getElementById('totalItems');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const addProductModal = document.getElementById('addProductModal');
+        const cancelProductBtn = document.getElementById('cancelProductBtn');
+        const saveProductBtn = document.getElementById('saveProductBtn');
+        const productForm = document.getElementById('productForm');
+        const successNotification = document.getElementById('successNotification');
+        const closeSuccessBtn = document.getElementById('closeSuccessBtn');
+        const successMessage = document.getElementById('successMessage');
+
+        // Инициализировать приложение
+        document.addEventListener('DOMContentLoaded', function() {
+            renderProductsTable();
+            updateTotalItems();
+
+            // Переключение боковой панели
+            toggleSidebarBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                content.classList.toggle('expanded');
+            });
+
+            // Добавить номенклатуру
+            addProductBtn.addEventListener('click', function() {
+                addProductModal.classList.remove('hidden');
+            });
+
+            cancelProductBtn.addEventListener('click', function() {
+                addProductModal.classList.add('hidden');
+                productForm.reset();
+            });
+
+            // Сохранить номенклатуру
+            saveProductBtn.addEventListener('click', function() {
+                const code = document.getElementById('productCode').value;
+                const name = document.getElementById('productName').value;
+                const category = document.getElementById('productCategory').value;
+                const unit = document.getElementById('productUnit').value;
+                const price = parseFloat(document.getElementById('productPrice').value);
+                const description = document.getElementById('productDescription').value;
+
+                if (!code || !name || !category || !unit || isNaN(price)) {
+                    alert('Пожалуйста, заполните все обязательные поля');
+                    return;
+                }
+
+                const newProduct = {
+                    id: products.length + 1,
+                    code: code,
+                    name: name,
+                    category: category,
+                    unit: unit,
+                    price: price,
+                    stock: 0,
+                    description: description
+                };
+
+                products.push(newProduct);
+                renderProductsTable();
+                updateTotalItems();
+                addProductModal.classList.add('hidden');
+                productForm.reset();
+
+                // Уведомление об успешном завершении
+                successMessage.textContent = 'Товар успешно добавлен.';
+                successNotification.classList.remove('hidden');
+                setTimeout(() => {
+                    successNotification.classList.add('hidden');
+                }, 5000);
+            });
+
+            // Закрыть уведомление об успешном завершении
+            closeSuccessBtn.addEventListener('click', function() {
+                successNotification.classList.add('hidden');
+            });
+        });
+
+        // Таблица конечных продуктов
+        function renderProductsTable() {
+            productsTable.innerHTML = '';
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 fade-in';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.code}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${getCategoryName(product.category)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.unit}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatPrice(product.price)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.stock}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-btn" data-id="${product.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${product.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+
+                productsTable.appendChild(row);
+            });
+
+            // Добавление прослушивателей событий для кнопок редактирования и удаления
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const productId = parseInt(this.getAttribute('data-id'));
+                    editProduct(productId);
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const productId = parseInt(this.getAttribute('data-id'));
+                    deleteProduct(productId);
+                });
+            });
+        }
+
+        // Изменить номенклатуру
+        function editProduct(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+
+            document.getElementById('modalTitle').textContent = 'Редактировать товар';
+            document.getElementById('productCode').value = product.code;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productCategory').value = product.category;
+            document.getElementById('productUnit').value = product.unit;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productDescription').value = product.description || '';
+
+            addProductModal.classList.remove('hidden');
+
+            // Измените поведение кнопки сохранить для редактирования
+            saveProductBtn.onclick = function() {
+                product.code = document.getElementById('productCode').value;
+                product.name = document.getElementById('productName').value;
+                product.category = document.getElementById('productCategory').value;
+                product.unit = document.getElementById('productUnit').value;
+                product.price = parseFloat(document.getElementById('productPrice').value);
+                product.description = document.getElementById('productDescription').value;
+
+                renderProductsTable();
+                addProductModal.classList.add('hidden');
+                productForm.reset();
+
+                // Показывать уведомление об успешном завершении
+                successMessage.textContent = 'Изменения успешно сохранены.';
+                successNotification.classList.remove('hidden');
+                setTimeout(() => {
+                    successNotification.classList.add('hidden');
+                }, 5000);
+
+                // Сбросить поведение кнопки сохранения
+                saveProductBtn.onclick = originalSaveHandler;
+            };
+        }
+
+        // Сохраните исходный обработчик сохранения
+        const originalSaveHandler = saveProductBtn.onclick;
+
+        // Удалить номенклатуру
+        function deleteProduct(id) {
+            if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+                const index = products.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    products.splice(index, 1);
+                    renderProductsTable();
+                    updateTotalItems();
+
+                    // Показывать уведомление об успешном завершении
+                    successMessage.textContent = 'Товар успешно удалён.';
+                    successNotification.classList.remove('hidden');
+                    setTimeout(() => {
+                        successNotification.classList.add('hidden');
+                    }, 5000);
+                }
+            }
+        }
+
+        // Обновить общее количество элементов
+        function updateTotalItems() {
+            totalItems.textContent = products.length;
+        }
+
+        // Вспомогательные функции
+        function getCategoryName(category) {
+            const categories = {
+                'electronics': 'Электроника',
+                'office': 'Офисные принадлежности',
+                'furniture': 'Мебель',
+                'materials': 'Строительные материалы',
+                'vazhnoe': 'Жизненно необходимое'
+            };
+            return categories[category] || category;
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(price);
+        }
+    </script>
+</body>
+</html>
